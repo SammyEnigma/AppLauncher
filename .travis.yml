@@ -11,6 +11,9 @@ os:
 env:
   global:
   - secure: "hsLaLewTuzBbghctH4bDfpzGPwdGlzfW0BS0zBbRRuEeqC9I4HrpSvxfj8YuBbuVvqzqXuGODrOx07mvwec3KyIS8NvXwqYufBoxlbpFH9MTmyEFZdDoqyx0TKborl4m2iVotUzQXls6jnFuK0kcFMArKdnhipKPKmn6xnS8mNA="
+  matrix:
+  - QT_VERSION=4
+  - QT_VERSION=5
 
 compiler:
 - clang
@@ -39,25 +42,29 @@ script:
 - |
   mkdir build
   cd build
-  cmake \
-    -DQT_QMAKE_EXECUTABLE:FILEPATH=/Users/kitware/Dashboards/Support/qt-everywhere-opensource-static-build-4.7.4/bin/qmake \
-    -DCMAKE_BUILD_TYPE:STRING=Release \
-    -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=10.6 \
-    -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
-    ../
+  if [[ $QT_VERSION == "4" ]]; then
+    cmake \
+      -DQT_QMAKE_EXECUTABLE:FILEPATH=/Users/kitware/Dashboards/Support/qt-everywhere-opensource-static-build-4.7.4/bin/qmake \
+      -DCMAKE_BUILD_TYPE:STRING=Release \
+      -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=10.6 \
+      -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
+      ../
+  else
+    echo "TODO"
+  fi;
 - make -j4 && make package
 # Exclude tests requiring X Display
 - ctest -LE XDisplayRequired -VV
 
 deploy:
   - provider: script
-    script: ci_addons publish_github_release commontk/applauncher --prerelease-packages CTKAppLauncher-*.tar.gz --prerelease-packages-clear-pattern "*macosx*" --prerelease-packages-keep-pattern "*<COMMIT_SHORT_SHA>*"
+    script: [[ $QT_VERSION == "4" ]] && ci_addons publish_github_release commontk/applauncher --prerelease-packages CTKAppLauncher-*.tar.gz --prerelease-packages-clear-pattern "*macosx*" --prerelease-packages-keep-pattern "*<COMMIT_SHORT_SHA>*"
     skip_cleanup: true
     on:
       repo: commontk/AppLauncher
       branch: master
   - provider: script
-    script: ci_addons publish_github_release commontk/applauncher --release-packages CTKAppLauncher-*.tar.gz
+    script: [[ $QT_VERSION == "4" ]] && ci_addons publish_github_release commontk/applauncher --release-packages CTKAppLauncher-*.tar.gz
     skip_cleanup: true
     on:
       repo: commontk/AppLauncher
